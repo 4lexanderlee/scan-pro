@@ -21,7 +21,7 @@ const Hero = () => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
           </span>
-          <span className="text-sm text-muted-foreground">Plataforma profesional de ciencia de datos</span>
+          <span className="text-sm text-muted-foreground">Plataforma profesional de manejo de datos</span>
         </div>
         
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-secondary bg-clip-text text-transparent leading-tight">
@@ -29,7 +29,7 @@ const Hero = () => {
         </h1>
         
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-          Procesa, analiza y modela datos con las mejores herramientas de Python.
+          Procesa, analiza y modela datos con las mejores herramientas.
           <br />
           <span className="text-foreground font-semibold">Pandas • NumPy • Scikit-Learn • PyTorch</span>
         </p>
@@ -39,7 +39,7 @@ const Hero = () => {
             <Button variant="hero" size="lg" className="text-lg group">
               Comenzar ahora
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            </Button>             
           </Link>
         </div>
         

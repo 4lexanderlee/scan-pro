@@ -10,10 +10,10 @@ const Footer = () => {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                 <span className="text-lg font-bold text-primary-foreground">D</span>
               </div>
-              <span className="text-lg font-bold">DataLab Pro</span>
+              <span className="text-lg font-bold">Scan Pro</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Plataforma profesional para ciencia de datos y machine learning.
+              Plataforma profesional para el manejo de datos y machine learning.
             </p>
           </div>
           

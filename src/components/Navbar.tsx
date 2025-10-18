@@ -29,7 +29,7 @@ const Navbar = () => {
           </a>
           <Link to="/analysis">
             <Button variant="hero" size="sm">
-              Comenzar
+              Log In
             </Button>
           </Link>
         </div>
@@ -58,7 +58,7 @@ const Navbar = () => {
             </a>
             <Link to="/analysis" className="w-full">
               <Button variant="hero" size="sm" className="w-full">
-                Comenzar
+                Log In
               </Button>
             </Link>
           </div>
