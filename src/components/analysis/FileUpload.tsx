@@ -4,12 +4,17 @@ import { Card } from "@/components/ui/card";
 import Papa from "papaparse";
 import { toast } from "@/hooks/use-toast";
 import { DatasetInfo } from "@/pages/Analysis";
+// [AÑADIR] Importar cliente Supabase
+import { supabase } from "@/lib/supabaseClient"; 
 
 interface FileUploadProps {
-  onDatasetLoaded: (dataset: DatasetInfo) => void;
+  userId: string;
+  projectName: string;
+  projectDescription: string;
+  onDatasetLoaded: (dataset: DatasetInfo, projectId: string) => void;
 }
 
-const FileUpload = ({ onDatasetLoaded }: FileUploadProps) => {
+const FileUpload = ({ userId, projectName, projectDescription, onDatasetLoaded }: FileUploadProps) => {
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -27,7 +32,7 @@ const FileUpload = ({ onDatasetLoaded }: FileUploadProps) => {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => { // Hacer la función `complete` asíncrona
         if (results.errors.length > 0) {
           toast({
             title: "Error al procesar CSV",
@@ -49,18 +54,91 @@ const FileUpload = ({ onDatasetLoaded }: FileUploadProps) => {
           return;
         }
 
-        onDatasetLoaded({
+        // --- [1] CREAR EL REGISTRO DEL PROYECTO (projects) ---
+        // Generar un ID temporal para usarlo en la ruta de Storage
+        const { data: projectInsert, error: projectError } = await supabase
+          .from('projects')
+          .insert({
+            user_id: userId,
+            name: projectName || file.name.replace('.csv', ''),
+            description: projectDescription || "Dataset inicial cargado",
+            datasetName: file.name, 
+            models: [],
+          })
+          .select('id_projects') // Obtener el ID generado por la DB
+          .single();
+
+        if (projectError) {
+          console.error("Supabase Project Insert Error:", projectError);
+          toast({
+            title: "Error en el Proyecto",
+            description: projectError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        const newProjectId = projectInsert.id_projects;
+
+        // --- [2] SUBIR EL ARCHIVO A SUPABASE STORAGE ---
+        // Ruta: [user_id]/[project_id]/[file_name.csv]
+        const storagePath = `${userId}/${newProjectId}/${file.name}`; 
+
+        const { error: uploadError } = await supabase.storage
+          .from('project_files') // Nombre del bucket
+          .upload(storagePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error("Supabase Storage Upload Error:", uploadError);
+          toast({
+            title: "Error de Subida de Archivo",
+            description: uploadError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // --- [3] INSERTAR METADATOS DEL DATASET (datasets) ---
+        const { error: datasetError } = await supabase
+          .from('datasets')
+          .insert({
+            project_id: newProjectId,
+            file_name: file.name,
+            storage_path: storagePath,
+            rows_count: data.length,
+            columns_info: columns,
+          });
+
+        if (datasetError) {
+          console.error("Supabase Dataset Insert Error:", datasetError);
+          // Si esto falla, el archivo y el proyecto quedan en la DB/Storage, pero sin metadatos completos.
+          toast({
+            title: "Error al registrar metadatos",
+            description: "El proyecto y archivo se crearon, pero falló el registro del dataset. Revísalo.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Preparar el objeto para la navegación
+        const newDatasetInfo: DatasetInfo = {
           name: file.name,
           rows: data.length,
           columns,
           data,
           uploadedAt: new Date(),
-        });
+        };
 
         toast({
           title: "Dataset cargado",
-          description: `${data.length} filas y ${columns.length} columnas procesadas`,
+          description: `${data.length} filas y ${columns.length} columnas procesadas. Proyecto creado.`,
         });
+
+        // --- [4] CONTINUAR EL FLUJO ---
+        onDatasetLoaded(newDatasetInfo, newProjectId);
       },
       error: (error) => {
         toast({
@@ -70,7 +148,7 @@ const FileUpload = ({ onDatasetLoaded }: FileUploadProps) => {
         });
       },
     });
-  }, [onDatasetLoaded]);
+  }, [userId, projectName, projectDescription, onDatasetLoaded, toast]); 
 
   return (
     <Card className="p-12 border-2 border-dashed border-border hover:border-primary/50 transition-colors">
